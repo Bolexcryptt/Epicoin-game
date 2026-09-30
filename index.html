@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
+
+    <title>EpiCoin Games</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- =========================
+         HOME / GAME HUB
+    ========================== -->
+
+    <main id="homeScreen" class="screen active">
+
+        <div class="home-bg-glow glow-one"></div>
+        <div class="home-bg-glow glow-two"></div>
+
+        <header class="home-header">
+
+            <div class="brand">
+                <img src="logo.png" alt="EpiCoin" class="brand-logo">
+
+                <div>
+                    <h1>EpiCoin</h1>
+                    <span>GAME CENTER</span>
+                </div>
+            </div>
+
+            <button class="icon-button" id="homeLeaderboardBtn">
+                🏆
+            </button>
+
+        </header>
+
+
+        <section class="hero">
+
+            <div class="hero-badge">
+                ✦ EPICOIN ARCADE ✦
+            </div>
+
+            <h2>PLAY. COMPETE.<br><span>DOMINATE.</span></h2>
+
+            <p>
+                Choose your game and climb the leaderboard.
+            </p>
+
+        </section>
+
+
+        <!-- GAME CARDS -->
+
+        <section class="game-list">
+
+            <!-- TILE RUSH -->
+
+            <article class="game-card tile-rush-card">
+
+                <div class="game-art">
+
+                    <img
+                        src="gamelogo.png"
+                        alt="Tile Rush"
+                    >
+
+                    <div class="art-shine"></div>
+
+                </div>
+
+                <div class="game-info">
+
+                    <div class="game-number">01</div>
+
+                    <h3>Tile Rush</h3>
+
+                    <p>
+                        Match the pairs, clear the layers and beat the clock.
+                    </p>
+
+                    <button
+                        class="play-button"
+                        id="tileRushButton"
+                    >
+                        PLAY TILE RUSH
+                        <span>→</span>
+                    </button>
+
+                </div>
+
+            </article>
+
+
+            <!-- TAP TO EARN -->
+
+            <article class="game-card tap-card">
+
+                <div class="game-art tap-art">
+
+                    <div class="tap-art-circle">
+
+                        <img
+                            src="epicoin2.png"
+                            alt="EpiCoin"
+                        >
+
+                    </div>
+
+                    <div class="floating-coin coin-a">◆</div>
+                    <div class="floating-coin coin-b">✦</div>
+                    <div class="floating-coin coin-c">●</div>
+
+                </div>
+
+                <div class="game-info">
+
+                    <div class="game-number">02</div>
+
+                    <h3>Tap To Earn</h3>
+
+                    <p>
+                        Tap, earn, upgrade and compete for the highest score.
+                    </p>
+
+                    <button class="play-button coming-button">
+                        COMING SOON
+                        <span>→</span>
+                    </button>
+
+                </div>
+
+            </article>
+
+
+            <!-- THIRD GAME -->
+
+            <article class="game-card third-card">
+
+                <div class="game-art mystery-art">
+
+                    <div class="mystery-symbol">?</div>
+
+                    <span>GAME 03</span>
+
+                </div>
+
+                <div class="game-info">
+
+                    <div class="game-number">03</div>
+
+                    <h3>Coming Soon</h3>
+
+                    <p>
+                        A new challenge is being prepared.
+                    </p>
+
+                    <button class="play-button coming-button">
+                        COMING SOON
+                        <span>→</span>
+                    </button>
+
+                </div>
+
+            </article>
+
+        </section>
+
+
+        <button class="leaderboard-wide" id="leaderboardButton">
+
+            <div class="trophy-icon">🏆</div>
+
+            <div>
+                <strong>LEADERBOARD</strong>
+                <small>See the top players</small>
+            </div>
+
+            <span>→</span>
+
+        </button>
+
+
+        <footer class="home-footer">
+            EPICOIN • PLAY FOR THE GLORY
+        </footer>
+
+    </main>
+
+
+
+    <!-- =========================
+         BOARD SELECTION
+    ========================== -->
+
+    <main id="boardsScreen" class="screen">
+
+        <header class="game-header">
+
+            <button class="back-button" id="boardsBack">
+                ← Games
+            </button>
+
+            <img
+                src="ingamelogo.png"
+                class="small-game-logo"
+                alt="Tile Rush"
+                onerror="this.src='gamelogoplay.png'"
+            >
+
+            <button class="header-button">
+                <span>Boards</span>
+            </button>
+
+        </header>
+
+
+        <section class="boards-intro">
+
+            <div class="section-tag">
+                TILE RUSH
+            </div>
+
+            <h2>Pick a board.</h2>
+
+            <p>
+                Choose your challenge. Clear every tile.
+            </p>
+
+        </section>
+
+
+        <section id="boardGrid" class="board-grid"></section>
+
+    </main>
+
+
+
+    <!-- =========================
+         TILE RUSH GAME
+    ========================== -->
+
+    <main id="gameScreen" class="screen game-screen">
+
+        <header class="game-header gameplay-header">
+
+            <button class="back-button" id="gameBack">
+                ← Boards
+            </button>
+
+            <img
+                src="ingamelogo.png"
+                class="small-game-logo gameplay-logo"
+                alt="Tile Rush"
+                onerror="this.src='gamelogoplay.png'"
+            >
+
+            <button class="sound-button" id="soundButton">
+                🔊
+            </button>
+
+        </header>
+
+
+        <section class="game-title-row">
+
+            <div>
+
+                <span class="game-label">
+                    CURRENT BOARD
+                </span>
+
+                <h2 id="currentBoardName">
+                    Epi Tower
+                </h2>
+
+            </div>
+
+            <button id="restartButton" class="restart-button">
+                ↻ Restart
+            </button>
+
+        </section>
+
+
+        <!-- GAME STATS -->
+
+        <section class="game-stats">
+
+            <div class="stat">
+
+                <span>SCORE</span>
+                <strong id="scoreValue">0</strong>
+
+            </div>
+
+            <div class="stat">
+
+                <span>COMBO</span>
+                <strong id="comboValue">1×</strong>
+
+            </div>
+
+            <div class="stat">
+
+                <span>TIME</span>
+                <strong id="timeValue">05:00</strong>
+
+            </div>
+
+            <div class="stat">
+
+                <span>TILES LEFT</span>
+                <strong id="tilesValue">200</strong>
+
+            </div>
+
+        </section>
+
+
+        <!-- PROGRESS -->
+
+        <div class="progress-wrap">
+
+            <div class="progress-bar">
+                <div id="progressFill"></div>
+            </div>
+
+        </div>
+
+        <div id="comboTimerWrap" class="combo-timer-wrap" aria-live="polite">
+            <div class="combo-timer-labels">
+                <span>COMBO</span>
+                <strong id="comboTimerText">2.0s</strong>
+            </div>
+            <div class="combo-timer-bar">
+                <div id="comboProgressFill"></div>
+            </div>
+        </div>
+
+
+        <!-- ACTUAL TILE BOARD -->
+
+        <section id="tileBoard" class="tile-board"></section>
+
+
+        <!-- POWER BUTTONS -->
+
+        <section class="powerups">
+
+            <button class="power-button" id="hintButton">
+
+                <span class="power-icon">✦</span>
+
+                <div>
+                    <strong>Hint</strong>
+                    <small id="hintCount">×3</small>
+                </div>
+
+            </button>
+
+
+            <button class="power-button" id="shuffleButton">
+
+                <span class="power-icon">⇄</span>
+
+                <div>
+                    <strong>Shuffle</strong>
+                    <small id="shuffleCount">×2</small>
+                </div>
+
+            </button>
+
+
+            <button class="power-button" id="bombButton">
+
+                <span class="power-icon">◉</span>
+
+                <div>
+                    <strong>Bomb</strong>
+                    <small id="bombCount">×1</small>
+                </div>
+
+            </button>
+
+        </section>
+
+
+        <div class="game-message" id="gameMessage">
+            Find matching pairs
+        </div>
+
+    </main>
+
+
+
+    <!-- =========================
+         LEADERBOARD
+    ========================== -->
+
+    <main id="leaderboardScreen" class="screen">
+
+        <header class="simple-header">
+
+            <button class="back-button" id="leaderboardBack">
+                ← Back
+            </button>
+
+            <h2>Leaderboard</h2>
+
+            <div></div>
+
+        </header>
+
+
+        <section class="leaderboard-hero">
+
+            <div class="leaderboard-trophy">
+                🏆
+            </div>
+
+            <h1>TOP PLAYERS</h1>
+
+            <p>
+                Clear boards. Build your score.
+            </p>
+
+        </section>
+
+
+        <section id="leaderboardList" class="leaderboard-list"></section>
+
+    </main>
+
+
+
+    <!-- =========================
+         GAME OVER MODAL
+    ========================== -->
+
+    <div class="modal-overlay" id="resultModal">
+
+        <div class="result-modal">
+
+            <div class="result-icon" id="resultIcon">
+                🏆
+            </div>
+
+            <span class="result-label">
+                GAME COMPLETE
+            </span>
+
+            <h2 id="resultTitle">
+                Board Cleared!
+            </h2>
+
+            <div class="final-score">
+
+                <small>YOUR SCORE</small>
+
+                <strong id="finalScore">
+                    0
+                </strong>
+
+            </div>
+
+            <div class="result-meta">
+
+                <div>
+                    <span>TIME LEFT</span>
+                    <strong id="resultTimeValue">05:00</strong>
+                </div>
+
+                <div>
+                    <span>BEST COMBO</span>
+                    <strong id="resultComboValue">1×</strong>
+                </div>
+
+            </div>
+
+            <div class="result-actions">
+
+                <button id="playAgainButton">
+                    PLAY AGAIN
+                </button>
+
+                <button id="resultBoardsButton">
+                    OTHER BOARDS
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script src="script.js"></script>
+
+</body>
+</html>
