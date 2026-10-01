@@ -126,6 +126,7 @@ let tiles = [];
 let selectedTile = null;
 
 let score = 0;
+let matchedScore = 0;
 
 let combo = 1;
 
@@ -201,6 +202,8 @@ const finalScore =
 
 const resultTimeValue = document.getElementById("resultTimeValue");
 const resultComboValue = document.getElementById("resultComboValue");
+const resultTilesValue = document.getElementById("resultTilesValue");
+const resultMatchScoreValue = document.getElementById("resultMatchScoreValue");
 
 const resultLabel = document.querySelector(".result-label");
 
@@ -680,6 +683,7 @@ function startGame(board) {
             : null;
 
     score = 0;
+    matchedScore = 0;
     combo = 1;
     clearedTiles = 0;
     gameFinished = false;
@@ -1224,6 +1228,7 @@ function matchTiles(first, second) {
         10 * (combo + (welcomeComboBoostPending ? 1 : 0));
 
     score += matchPoints;
+    matchedScore += matchPoints;
     welcomeComboBoostPending = false;
 
     combo++;
@@ -1781,6 +1786,9 @@ function finishGame(won) {
         resultLabel.textContent =
             "GAME COMPLETE";
 
+        document.getElementById("resultScoreNote").textContent =
+            "Clear bonus included. Score saved to your leaderboard.";
+
         document.getElementById("playAgainButton").textContent =
             "PLAY AGAIN";
 
@@ -1794,6 +1802,9 @@ function finishGame(won) {
 
         resultLabel.textContent =
             "TIME'S UP";
+
+        document.getElementById("resultScoreNote").textContent =
+            "Match points saved to your leaderboard.";
 
         document.getElementById("playAgainButton").textContent =
             "START AGAIN";
@@ -1809,6 +1820,12 @@ function finishGame(won) {
 
     resultComboValue.textContent =
         `${Math.max(1, combo)}×`;
+
+    resultTilesValue.textContent =
+        `${clearedTiles} / ${tiles.length || BOARD_TILE_COUNT}`;
+
+    resultMatchScoreValue.textContent =
+        matchedScore.toLocaleString();
 
 
     saveLeaderboardScore();
@@ -1828,7 +1845,9 @@ function saveLeaderboardScore() {
 
     leaderboard.push({
 
-        name: "You",
+        name: playerProfile?.name || "You",
+
+        isUser: true,
 
         score: score,
 
@@ -1914,7 +1933,7 @@ function renderLeaderboard() {
 
 
             if (
-                player.name === "You"
+                player.isUser || player.name === "You"
             ) {
 
                 row.classList.add("you");
@@ -1922,7 +1941,7 @@ function renderLeaderboard() {
 
 
             const avatar =
-                player.name === "You"
+                player.isUser || player.name === "You"
                     ? "epicoin2.png"
                     : "epicoin.png";
 
