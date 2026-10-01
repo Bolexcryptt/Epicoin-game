@@ -27,6 +27,37 @@ const TILE_ASSETS = [
 ];
 
 
+const ONBOARDING_KEYS = {
+    profile: "epicoinPlayerProfile",
+    spin: "epicoinLuckySpin",
+    reward: "epicoinWelcomeReward",
+    pot: "epicoinLocalPotBalance"
+};
+
+const LUCKY_REWARDS = [
+    { kind: "pot", amount: 1000, title: "1,000 $POT", detail: "1,000 $POT added to your local reward balance." },
+    { kind: "pot", amount: 500, title: "500 $POT", detail: "500 $POT added to your local reward balance." },
+    { kind: "pot", amount: 250, title: "250 $POT", detail: "250 $POT added to your local reward balance." },
+    { kind: "hint", title: "FREE HINT", detail: "A bonus Hint is waiting in your first Tile Rush round." },
+    { kind: "bomb", title: "FREE BOMB", detail: "A bonus Bomb is waiting in your first Tile Rush round." },
+    { kind: "shuffle", title: "FREE SHUFFLE", detail: "A bonus Shuffle is waiting in your first Tile Rush round." },
+    { kind: "combo", title: "2× COMBO BOOST", detail: "Your first correct match gets a 2× combo boost." },
+    { kind: "time", amount: 10, title: "+10 SECONDS", detail: "Your first Tile Rush round starts with 10 bonus seconds." }
+];
+
+function readLocalJSON(key) {
+    try {
+        return JSON.parse(localStorage.getItem(key) || "null");
+    } catch {
+        return null;
+    }
+}
+
+let playerProfile = readLocalJSON(ONBOARDING_KEYS.profile);
+let luckySpinRecord = readLocalJSON(ONBOARDING_KEYS.spin);
+let welcomeReward = readLocalJSON(ONBOARDING_KEYS.reward);
+
+
 /* =========================================================
    BOARD DATA
 ========================================================= */
@@ -99,6 +130,9 @@ let score = 0;
 let combo = 1;
 
 let clearedTiles = 0;
+let gameFinished = false;
+
+const BOARD_CLEAR_POT_REWARD = 5000;
 
 let gameTime = 300;
 
@@ -109,6 +143,7 @@ let boardResizeTimer = null;
 let comboTimer = null;
 let comboWindowMs = 2000;
 let comboWindowStart = 0;
+let welcomeComboBoostPending = false;
 
 let soundEnabled = true;
 
@@ -126,6 +161,9 @@ let leaderboard = JSON.parse(
 ========================================================= */
 
 const homeScreen = document.getElementById("homeScreen");
+const spinScreen = document.getElementById("spinScreen");
+const profileSetupScreen = document.getElementById("profileSetupScreen");
+const profileViewScreen = document.getElementById("profileViewScreen");
 const boardsScreen = document.getElementById("boardsScreen");
 const gameScreen = document.getElementById("gameScreen");
 const leaderboardScreen =
@@ -168,6 +206,18 @@ const resultIcon =
 
 const leaderboardList =
     document.getElementById("leaderboardList");
+const potBalanceValue = document.getElementById("potBalanceValue");
+
+const luckyWheel = document.getElementById("luckyWheel");
+const spinNowButton = document.getElementById("spinNowButton");
+const spinRewardPanel = document.getElementById("spinRewardPanel");
+const spinRewardValue = document.getElementById("spinRewardValue");
+const spinRewardDescription = document.getElementById("spinRewardDescription");
+const profileSetupForm = document.getElementById("profileSetupForm");
+const playerNameInput = document.getElementById("playerNameInput");
+const walletAddressInput = document.getElementById("walletAddressInput");
+const walletValidationMessage = document.getElementById("walletValidationMessage");
+const profileRewardSummary = document.getElementById("profileRewardSummary");
 
 
 /* =========================================================
@@ -182,10 +232,220 @@ function showScreen(screen) {
 
     screen.classList.add("active");
 
+    if (screen === homeScreen) {
+        updatePotBalance();
+    }
+
     window.scrollTo({
         top: 0,
         behavior: "instant"
     });
+}
+
+
+function updatePotBalance() {
+
+    const balance = Number(
+        localStorage.getItem(ONBOARDING_KEYS.pot) || 0
+    );
+
+    potBalanceValue.textContent =
+        Number.isFinite(balance)
+            ? balance.toLocaleString()
+            : "0";
+}
+
+
+function creditPotBalance(amount) {
+
+    const currentBalance = Number(
+        localStorage.getItem(ONBOARDING_KEYS.pot) || 0
+    );
+    const nextBalance = currentBalance + amount;
+
+    localStorage.setItem(
+        ONBOARDING_KEYS.pot,
+        String(nextBalance)
+    );
+
+    updatePotBalance();
+}
+
+
+function showLuckyReward() {
+
+    if (!luckySpinRecord?.reward) return;
+
+    const reward = luckySpinRecord.reward;
+    const rewardIndex = LUCKY_REWARDS.findIndex(item => item.kind === reward.kind && item.amount === reward.amount);
+    const selectedIndex = rewardIndex < 0 ? LUCKY_REWARDS.findIndex(item => item.kind === reward.kind) : rewardIndex;
+    const rotation = 360 * 6 - selectedIndex * 45;
+
+    luckyWheel.style.transform = `rotate(${rotation}deg)`;
+    spinNowButton.disabled = true;
+    spinNowButton.querySelector("span").textContent = "SPIN COMPLETE";
+    spinRewardValue.textContent = reward.title;
+    spinRewardDescription.textContent = reward.detail;
+    spinRewardPanel.hidden = false;
+    requestAnimationFrame(() => spinRewardPanel.classList.add("visible"));
+}
+
+
+function startLuckySpin() {
+
+    if (luckySpinRecord?.reward) {
+        showLuckyReward();
+        return;
+    }
+
+    const selectedIndex = Math.floor(Math.random() * LUCKY_REWARDS.length);
+    const reward = { ...LUCKY_REWARDS[selectedIndex] };
+    const rotation = 360 * 6 - selectedIndex * 45;
+
+    spinNowButton.disabled = true;
+    spinNowButton.classList.add("is-spinning");
+    luckyWheel.style.transform = `rotate(${rotation}deg)`;
+
+    window.setTimeout(() => {
+        luckySpinRecord = {
+            reward,
+            spunAt: Date.now()
+        };
+        localStorage.setItem(
+            ONBOARDING_KEYS.spin,
+            JSON.stringify(luckySpinRecord)
+        );
+        spinNowButton.classList.remove("is-spinning");
+        spinNowButton.querySelector("span").textContent = "SPIN COMPLETE";
+        spinRewardValue.textContent = reward.title;
+        spinRewardDescription.textContent = reward.detail;
+        spinRewardPanel.hidden = false;
+        requestAnimationFrame(() => spinRewardPanel.classList.add("visible"));
+    }, 4300);
+}
+
+
+function claimLuckyReward() {
+
+    if (!luckySpinRecord?.reward) return;
+
+    if (!welcomeReward) {
+        welcomeReward = {
+            ...luckySpinRecord.reward,
+            claimedAt: Date.now(),
+            used: false
+        };
+        localStorage.setItem(
+            ONBOARDING_KEYS.reward,
+            JSON.stringify(welcomeReward)
+        );
+
+        if (welcomeReward.kind === "pot") {
+            creditPotBalance(welcomeReward.amount);
+        }
+    }
+
+    profileRewardSummary.textContent = welcomeReward.title;
+    showScreen(profileSetupScreen);
+}
+
+
+function isValidSolanaAddress(address) {
+    return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address);
+}
+
+
+function updateWalletValidation() {
+
+    const address = walletAddressInput.value.trim();
+    const valid = isValidSolanaAddress(address);
+
+    walletAddressInput.setCustomValidity(
+        valid || !address ? "" : "Enter a valid Solana wallet address."
+    );
+    walletValidationMessage.textContent =
+        valid
+            ? "Solana address format verified."
+            : "Use a valid Solana address (32–44 Base58 characters).";
+    walletValidationMessage.classList.toggle("valid", valid);
+
+    return valid;
+}
+
+
+function savePlayerProfile(event) {
+
+    event.preventDefault();
+
+    const name = playerNameInput.value.trim();
+    const walletAddress = walletAddressInput.value.trim();
+
+    if (!name || !isValidSolanaAddress(walletAddress)) {
+        if (!name) playerNameInput.focus();
+        else walletAddressInput.focus();
+        updateWalletValidation();
+        return;
+    }
+
+    playerProfile = {
+        name,
+        walletAddress,
+        reward: welcomeReward?.title || luckySpinRecord?.reward?.title || "Welcome reward",
+        createdAt: Date.now()
+    };
+
+    localStorage.setItem(
+        ONBOARDING_KEYS.profile,
+        JSON.stringify(playerProfile)
+    );
+
+    renderPlayerProfile();
+    showScreen(homeScreen);
+    currentScreen = "home";
+}
+
+
+function renderPlayerProfile() {
+
+    if (!playerProfile) return;
+
+    document.getElementById("profileViewName").textContent =
+        playerProfile.name;
+    document.getElementById("profileViewNameValue").textContent =
+        playerProfile.name;
+    document.getElementById("profileViewWallet").textContent =
+        playerProfile.walletAddress;
+}
+
+
+function openPlayerProfile() {
+
+    if (!playerProfile) return;
+
+    renderPlayerProfile();
+    showScreen(profileViewScreen);
+}
+
+
+function initializeFirstVisit() {
+
+    if (playerProfile) {
+        renderPlayerProfile();
+        showScreen(homeScreen);
+        return;
+    }
+
+    if (welcomeReward && luckySpinRecord?.reward) {
+        profileRewardSummary.textContent = welcomeReward.title;
+        showScreen(profileSetupScreen);
+        return;
+    }
+
+    showScreen(spinScreen);
+
+    if (luckySpinRecord?.reward) {
+        showLuckyReward();
+    }
 }
 
 
@@ -414,17 +674,38 @@ function startGame(board) {
 
     currentBoard = board;
 
+    const pendingWelcomeReward =
+        welcomeReward && !welcomeReward.used
+            ? welcomeReward
+            : null;
+
     score = 0;
     combo = 1;
     clearedTiles = 0;
-    gameTime = 300;
+    gameFinished = false;
+    gameTime =
+        300 +
+        (pendingWelcomeReward?.kind === "time"
+            ? pendingWelcomeReward.amount
+            : 0);
     timerStarted = false;
+    welcomeComboBoostPending =
+        pendingWelcomeReward?.kind === "combo";
 
     selectedTile = null;
 
-    hints = 3;
+    hints = 3 + (pendingWelcomeReward?.kind === "hint" ? 1 : 0);
     shuffles = 2;
-    bombs = 1;
+    bombs = 1 + (pendingWelcomeReward?.kind === "bomb" ? 1 : 0);
+    shuffles += pendingWelcomeReward?.kind === "shuffle" ? 1 : 0;
+
+    if (pendingWelcomeReward) {
+        welcomeReward.used = true;
+        localStorage.setItem(
+            ONBOARDING_KEYS.reward,
+            JSON.stringify(welcomeReward)
+        );
+    }
 
     currentBoardName.textContent =
         board.name;
@@ -936,7 +1217,11 @@ function matchTiles(first, second) {
     clearedTiles += 2;
 
     gameTime += 1;
-    score += 10 * combo;
+    const matchPoints =
+        10 * (combo + (welcomeComboBoostPending ? 1 : 0));
+
+    score += matchPoints;
+    welcomeComboBoostPending = false;
 
     combo++;
 
@@ -949,7 +1234,7 @@ function matchTiles(first, second) {
     }
 
     gameMessage.textContent =
-        `MATCH! +${10 * (combo - 1)} • +1s`;
+        `MATCH! +${matchPoints} • +1s`;
 
     createMatchEffect(first);
     createMatchEffect(second);
@@ -1461,10 +1746,22 @@ function useBomb() {
 
 function finishGame(won) {
 
+    if (gameFinished) return;
+
+    gameFinished = true;
+
     stopTimer();
     stopComboTimer();
 
+    const potReward = document.getElementById("resultPotReward");
+    const potRewardAmount = document.getElementById("resultPotRewardAmount");
+    potReward.hidden = !won;
+
     if (won) {
+
+        creditPotBalance(BOARD_CLEAR_POT_REWARD);
+        potRewardAmount.textContent =
+            `+${BOARD_CLEAR_POT_REWARD.toLocaleString()} $POT`;
 
         score +=
             gameTime * 25;
@@ -1741,6 +2038,53 @@ document
 
 
 document
+    .getElementById("myProfileButton")
+    .addEventListener(
+        "click",
+        openPlayerProfile
+    );
+
+
+document
+    .getElementById("spinNowButton")
+    .addEventListener(
+        "click",
+        startLuckySpin
+    );
+
+
+document
+    .getElementById("claimRewardButton")
+    .addEventListener(
+        "click",
+        claimLuckyReward
+    );
+
+
+profileSetupForm.addEventListener(
+    "submit",
+    savePlayerProfile
+);
+
+
+walletAddressInput.addEventListener(
+    "input",
+    updateWalletValidation
+);
+
+
+document
+    .getElementById("profileHomeButton")
+    .addEventListener(
+        "click",
+        () => {
+            showScreen(homeScreen);
+            currentScreen = "home";
+        }
+    );
+
+
+document
     .getElementById("boardsBack")
     .addEventListener(
         "click",
@@ -1913,3 +2257,4 @@ document.head.appendChild(
 ========================================================= */
 
 renderBoards();
+initializeFirstVisit();
