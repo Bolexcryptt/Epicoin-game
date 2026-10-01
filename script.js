@@ -35,14 +35,14 @@ const ONBOARDING_KEYS = {
 };
 
 const LUCKY_REWARDS = [
-    { kind: "pot", amount: 1000, title: "1,000 $POT", detail: "1,000 $POT added to your local reward balance." },
-    { kind: "pot", amount: 500, title: "500 $POT", detail: "500 $POT added to your local reward balance." },
-    { kind: "pot", amount: 250, title: "250 $POT", detail: "250 $POT added to your local reward balance." },
-    { kind: "hint", title: "FREE HINT", detail: "A bonus Hint is waiting in your first Tile Rush round." },
-    { kind: "bomb", title: "FREE BOMB", detail: "A bonus Bomb is waiting in your first Tile Rush round." },
-    { kind: "shuffle", title: "FREE SHUFFLE", detail: "A bonus Shuffle is waiting in your first Tile Rush round." },
-    { kind: "combo", title: "2× COMBO BOOST", detail: "Your first correct match gets a 2× combo boost." },
-    { kind: "time", amount: 10, title: "+10 SECONDS", detail: "Your first Tile Rush round starts with 10 bonus seconds." }
+    { key: "10k-pot", kind: "pot", amount: 10000, title: "10K $POT", detail: "10,000 $POT has been added to your local vault." },
+    { key: "50k-pot", kind: "pot", amount: 50000, title: "50K $POT", detail: "50,000 $POT is now locked into your local reward balance." },
+    { key: "mini-jackpot", kind: "jackpot", title: "MINI JACKPOT", detail: "You hit the MINI JACKPOT and activated the bonus boost." },
+    { key: "major-jackpot", kind: "jackpot", title: "MAJOR JACKPOT", detail: "You cracked the MAJOR JACKPOT and the hype meter is maxed." },
+    { key: "grand-jackpot", kind: "jackpot", title: "GRAND JACKPOT", detail: "A GRAND JACKPOT hit — the biggest prize on the wheel." },
+    { key: "epicoin", kind: "epicoin", title: "EpiCoin", detail: "EpiCoin lands in your reward stack with a major arcade boost." },
+    { key: "1000-pot", kind: "pot", amount: 1000, title: "1,000 $POT", detail: "1,000 $POT has been added to your local vault." },
+    { key: "500-pot", kind: "pot", amount: 500, title: "500 $POT", detail: "500 $POT has been added to your local vault." }
 ];
 
 function readLocalJSON(key) {
@@ -283,8 +283,8 @@ function showLuckyReward() {
     if (!luckySpinRecord?.reward) return;
 
     const reward = luckySpinRecord.reward;
-    const rewardIndex = LUCKY_REWARDS.findIndex(item => item.kind === reward.kind && item.amount === reward.amount);
-    const selectedIndex = rewardIndex < 0 ? LUCKY_REWARDS.findIndex(item => item.kind === reward.kind) : rewardIndex;
+    const rewardIndex = LUCKY_REWARDS.findIndex(item => item.key === reward.key);
+    const selectedIndex = rewardIndex >= 0 ? rewardIndex : 0;
     const rotation = 360 * 6 - selectedIndex * 45;
 
     luckyWheel.style.transform = `rotate(${rotation}deg)`;
