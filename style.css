@@ -832,7 +832,7 @@ img {
 }
 
 .shape-p {
-    grid-template-columns: repeat(7, 13px);
+    grid-template-columns: repeat(5, 13px);
 }
 
 .shape-rocket {
@@ -1079,7 +1079,7 @@ img {
 
     width: min(94vw, 660px);
 
-    height: min(92vw, 610px);
+    height: min(145vw, 760px);
 
     margin: 8px auto 10px;
 
@@ -1629,7 +1629,7 @@ img {
     }
 
     .tile-board {
-        height: 610px;
+        height: min(178vw, 720px);
     }
 
     .small-game-logo {

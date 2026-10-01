@@ -68,7 +68,7 @@ const BOARDS = [
         name: "Epi P",
         shape: "p",
         layers: 5,
-        tiles: 200
+        tiles: 100
     },
 
     {
@@ -76,7 +76,7 @@ const BOARDS = [
         name: "Epi Tower",
         shape: "tower",
         layers: 5,
-        tiles: 200
+        tiles: 100
     },
 
     {
@@ -84,7 +84,7 @@ const BOARDS = [
         name: "Rocket",
         shape: "rocket",
         layers: 5,
-        tiles: 200
+        tiles: 100
     },
 
     {
@@ -92,7 +92,7 @@ const BOARDS = [
         name: "Diamond",
         shape: "diamond",
         layers: 5,
-        tiles: 200
+        tiles: 100
     },
 
     {
@@ -100,7 +100,7 @@ const BOARDS = [
         name: "Coin",
         shape: "coin",
         layers: 5,
-        tiles: 200
+        tiles: 100
     },
 
     {
@@ -108,7 +108,7 @@ const BOARDS = [
         name: "Treasure",
         shape: "treasure",
         layers: 5,
-        tiles: 200
+        tiles: 100
     }
 ];
 
@@ -134,7 +134,10 @@ let gameFinished = false;
 
 const BOARD_CLEAR_POT_REWARD = 5000;
 
-let gameTime = 300;
+const BASE_GAME_TIME = 50;
+const BOARD_TILE_COUNT = 100;
+
+let gameTime = BASE_GAME_TIME;
 
 let timer = null;
 let timerStarted = false;
@@ -577,16 +580,13 @@ function drawBoardPreview(container, shape) {
         ],
 
         p: [
-            "1111100",
-            "1000110",
-            "1000110",
-            "1000110",
-            "1111100",
-            "1000000",
-            "1000000",
-            "1000000",
-            "1000000",
-            "1000000"
+            "11111",
+            "10001",
+            "10001",
+            "10001",
+            "11111",
+            "11000",
+            "11000"
         ],
 
         rocket: [
@@ -684,7 +684,7 @@ function startGame(board) {
     clearedTiles = 0;
     gameFinished = false;
     gameTime =
-        300 +
+        BASE_GAME_TIME +
         (pendingWelcomeReward?.kind === "time"
             ? pendingWelcomeReward.amount
             : 0);
@@ -721,7 +721,7 @@ function startGame(board) {
     updateUI();
 
     gameMessage.textContent =
-        "5:00 ready — make a correct match to start the timer.";
+        `${formatTime(gameTime)} ready — make a correct match to start the timer.`;
 }
 
 
@@ -752,7 +752,7 @@ function createGameBoard() {
         });
     });
 
-    const targetCells = 40;
+    const targetCells = BOARD_TILE_COUNT / 5;
     const columns = Math.max(...pattern.map(row => row.length));
     const rows = pattern.length;
 
@@ -768,7 +768,14 @@ function createGameBoard() {
         }
     }
 
-    const cells = activeCells.slice(0, targetCells);
+    const cells = activeCells.length <= targetCells
+        ? activeCells
+        : Array.from(
+            { length: targetCells },
+            (_, index) => activeCells[
+                Math.floor(index * activeCells.length / targetCells)
+            ]
+        );
 
     for (let layer = 0; layer < 5; layer++) {
 
@@ -825,17 +832,13 @@ function getBoardShapePattern(shape) {
         ],
 
         p: [
-            "11111111",
-            "11000011",
-            "11000011",
-            "11000011",
-            "11111111",
-            "11000000",
-            "11000000",
-            "11000000",
-            "11000000",
-            "11000000",
-            "11000000"
+            "11111",
+            "10001",
+            "10001",
+            "10001",
+            "11111",
+            "11000",
+            "11000"
         ],
 
         rocket: [
@@ -1243,7 +1246,7 @@ function matchTiles(first, second) {
 
     updateUI();
 
-    const totalTiles = tiles.length || 200;
+    const totalTiles = tiles.length || BOARD_TILE_COUNT;
 
     if (clearedTiles >= totalTiles) {
 
@@ -1437,7 +1440,7 @@ function updateUI() {
     timeValue.textContent =
         formatTime(gameTime);
 
-    const totalTiles = tiles.length || 200;
+    const totalTiles = tiles.length || BOARD_TILE_COUNT;
 
     tilesValue.textContent =
         totalTiles - clearedTiles;
