@@ -23,7 +23,8 @@ const TILE_ASSETS = [
     "pumpfun.png",
     "robinhood.png",
     "rocket.png",
-    "fire.png"
+    "fire.png",
+    "trustwallet.png"
 ];
 
 
@@ -35,15 +36,82 @@ const ONBOARDING_KEYS = {
 };
 
 const LUCKY_REWARDS = [
-    { key: "10k-pot", kind: "pot", amount: 10000, title: "10K $POT", detail: "10,000 $POT has been added to your local vault." },
-    { key: "50k-pot", kind: "pot", amount: 50000, title: "50K $POT", detail: "50,000 $POT is now locked into your local reward balance." },
-    { key: "mini-jackpot", kind: "jackpot", title: "MINI JACKPOT", detail: "You hit the MINI JACKPOT and activated the bonus boost." },
-    { key: "major-jackpot", kind: "jackpot", title: "MAJOR JACKPOT", detail: "You cracked the MAJOR JACKPOT and the hype meter is maxed." },
-    { key: "grand-jackpot", kind: "jackpot", title: "GRAND JACKPOT", detail: "A GRAND JACKPOT hit — the biggest prize on the wheel." },
-    { key: "epicoin", kind: "epicoin", title: "EpiCoin", detail: "EpiCoin lands in your reward stack with a major arcade boost." },
-    { key: "1000-pot", kind: "pot", amount: 1000, title: "1,000 $POT", detail: "1,000 $POT has been added to your local vault." },
-    { key: "500-pot", kind: "pot", amount: 500, title: "500 $POT", detail: "500 $POT has been added to your local vault." }
+    { key: "500-pot", kind: "pot", amount: 500, title: "500", subtitle: "$POT", detail: "500 $POT has been added to your local vault.", weight: 20, color: "#327ac5" },
+    { key: "500k-pot", kind: "pot", amount: 500000, title: "500K", subtitle: "$POT", detail: "500K $POT has been added to your local vault.", weight: 3, color: "#c84336" },
+    { key: "10k-pot", kind: "pot", amount: 10000, title: "10K", subtitle: "$POT", detail: "10K $POT has been added to your local vault.", weight: 18, color: "#522d91" },
+    { key: "grand-jackpot", kind: "jackpot", title: "GRAND", subtitle: "JACKPOT", detail: "You hit the GRAND JACKPOT.", weight: 2, color: "#2796bb" },
+    { key: "50k-pot", kind: "pot", amount: 50000, title: "50K", subtitle: "$POT", detail: "50K $POT has been added to your local vault.", weight: 15, color: "#388a50" },
+    { key: "major-jackpot", kind: "jackpot", title: "MAJOR", subtitle: "JACKPOT", detail: "You hit the MAJOR JACKPOT.", weight: 2, color: "#a52d77" },
+    { key: "epicoin-boost", kind: "epicoin", title: "EPICOIN", subtitle: "BOOST", detail: "EPICOIN BOOST lands in your reward stack.", weight: 9, color: "#d39429" },
+    { key: "epicoin", kind: "epicoin", title: "EPICOIN", subtitle: "", detail: "EPICOIN is added to your reward stack.", weight: 8, color: "#258774" }
 ];
+
+function getWheelSegments() {
+    const totalLayoutWeight = LUCKY_REWARDS.reduce(
+        (sum, reward) => sum + Math.sqrt(reward.weight),
+        0
+    );
+    let startAngle = 0;
+
+    return LUCKY_REWARDS.map((reward) => {
+        const sliceSize = (Math.sqrt(reward.weight) / totalLayoutWeight) * 360;
+        const segment = {
+            ...reward,
+            startAngle,
+            endAngle: startAngle + sliceSize,
+            midpoint: startAngle + (sliceSize / 2)
+        };
+        startAngle += sliceSize;
+        return segment;
+    });
+}
+
+function buildWheelLayout() {
+    const wheelSegments = getWheelSegments();
+    const gradient = wheelSegments
+        .map((segment) => `${segment.color} ${segment.startAngle}deg ${segment.endAngle}deg`)
+        .join(", ");
+    const separators = wheelSegments
+        .map((segment) => `transparent ${segment.startAngle}deg, rgba(255,245,205,.9) ${segment.startAngle}deg ${segment.startAngle + 0.65}deg, transparent ${segment.startAngle + 0.65}deg`)
+        .join(", ");
+
+    luckyWheel.style.background = `radial-gradient(circle at center, rgba(255,255,255,.16), rgba(255,255,255,0) 35%), conic-gradient(from 0deg, ${gradient})`;
+    luckyWheel.style.setProperty("--wheel-separators", separators);
+
+    luckyWheel.querySelectorAll(".wheel-label").forEach((label) => label.remove());
+
+    wheelSegments.forEach((segment) => {
+        const label = document.createElement("div");
+        const isRare = segment.weight <= 3;
+        label.className = isRare
+            ? "wheel-label wheel-label-rare"
+            : "wheel-label";
+        label.style.setProperty("--wheel-angle", `${segment.midpoint}deg`);
+        label.innerHTML = segment.subtitle
+            ? `<b>${segment.title}</b><small>${segment.subtitle}</small>`
+            : `<b>${segment.title}</b>`;
+        luckyWheel.appendChild(label);
+    });
+
+    const hub = luckyWheel.querySelector(".wheel-hub");
+    if (hub) {
+        luckyWheel.appendChild(hub);
+    }
+}
+
+function pickWeightedReward() {
+    const totalWeight = LUCKY_REWARDS.reduce((sum, reward) => sum + reward.weight, 0);
+    let target = Math.random() * totalWeight;
+
+    for (const reward of LUCKY_REWARDS) {
+        target -= reward.weight;
+        if (target <= 0) {
+            return { ...reward };
+        }
+    }
+
+    return { ...LUCKY_REWARDS[0] };
+}
 
 function readLocalJSON(key) {
     try {
@@ -283,9 +351,9 @@ function showLuckyReward() {
     if (!luckySpinRecord?.reward) return;
 
     const reward = luckySpinRecord.reward;
-    const rewardIndex = LUCKY_REWARDS.findIndex(item => item.key === reward.key);
-    const selectedIndex = rewardIndex >= 0 ? rewardIndex : 0;
-    const rotation = 360 * 6 - selectedIndex * 45;
+    const segments = getWheelSegments();
+    const choice = segments.find((segment) => segment.key === reward.key) || segments[0];
+    const rotation = 360 * 6 - choice.midpoint;
 
     luckyWheel.style.transform = `rotate(${rotation}deg)`;
     spinNowButton.disabled = true;
@@ -304,9 +372,10 @@ function startLuckySpin() {
         return;
     }
 
-    const selectedIndex = Math.floor(Math.random() * LUCKY_REWARDS.length);
-    const reward = { ...LUCKY_REWARDS[selectedIndex] };
-    const rotation = 360 * 6 - selectedIndex * 45;
+    const reward = pickWeightedReward();
+    const segments = getWheelSegments();
+    const choice = segments.find((segment) => segment.key === reward.key) || segments[0];
+    const rotation = 360 * 6 - choice.midpoint;
 
     spinNowButton.disabled = true;
     spinNowButton.classList.add("is-spinning");
@@ -434,6 +503,8 @@ function openPlayerProfile() {
 
 
 function initializeFirstVisit() {
+
+    buildWheelLayout();
 
     if (playerProfile) {
         renderPlayerProfile();
@@ -2238,6 +2309,568 @@ document
         }
     );
 
+
+(() => {
+
+    "use strict";
+
+    const PUZZLE_ROWS = 8;
+    const PUZZLE_COLS = 8;
+    const PUZZLE_TOTAL_TILES = PUZZLE_ROWS * PUZZLE_COLS;
+    const PUZZLE_GAME_TIME = 120;
+    const PUZZLE_JACKPOT_TARGET = 2000;
+    const PUZZLE_JACKPOT_REWARD = 10000;
+    const PUZZLE_COMBO_RESET_TIME = 2000;
+    const PUZZLE_MIN_AVAILABLE_MOVES = 4;
+    const PUZZLE_COMMON_BLOCK_WEIGHT = 4;
+
+    const PUZZLE_BLOCK_ASSETS = [
+        "epicoin.png",
+        "epicoin2.png",
+        "phantom.png",
+        "telegram.png",
+        "twitter.png",
+        "solana.png",
+        "ethereum.png",
+        "ethereum2.png",
+        "diamond.png",
+        "treasure.png",
+        "pumpfun.png",
+        "robinhood.png",
+        "rocket.png",
+        "fire.png"
+    ];
+
+    const puzzleGameScreen = document.getElementById("puzzleGameScreen");
+    const puzzleBoard = document.getElementById("puzzleBoard");
+    const puzzleScoreElement = document.getElementById("puzzleScore");
+    const puzzleTimerElement = document.getElementById("puzzleTimer");
+    const puzzleTimerFill = document.getElementById("puzzleTimerFill");
+    const puzzleTargetScore = document.getElementById("puzzleTargetScore");
+    const puzzleTargetFill = document.getElementById("puzzleTargetFill");
+    const puzzleComboElement = document.getElementById("puzzleCombo");
+    const puzzleMatchesElement = document.getElementById("puzzleMatches");
+    const puzzleLiveReward = document.getElementById("puzzleLiveReward");
+    const puzzleMessage = document.getElementById("puzzleMessage");
+    const puzzleFloatingLayer = document.getElementById("puzzleFloatingLayer");
+    const puzzleGameOver = document.getElementById("puzzleGameOver");
+    const puzzleResultTitle = document.getElementById("puzzleResultTitle");
+    const puzzleResultMessage = document.getElementById("puzzleResultMessage");
+    const puzzleFinalScore = document.getElementById("puzzleFinalScore");
+    const puzzleFinalMatches = document.getElementById("puzzleFinalMatches");
+    const puzzleFinalCombo = document.getElementById("puzzleFinalCombo");
+    const puzzleFinalReward = document.getElementById("puzzleFinalReward");
+    const puzzleJackpotStatus = document.getElementById("puzzleJackpotStatus");
+    const puzzleRewardNote = document.getElementById("puzzleRewardNote");
+    const puzzlePlayAgain = document.getElementById("puzzlePlayAgain");
+
+    let puzzleTiles = [];
+    let puzzleSelectedTile = -1;
+    let puzzleScore = 0;
+    let puzzleSeconds = PUZZLE_GAME_TIME;
+    let puzzleCombo = 1;
+    let puzzleBestCombo = 1;
+    let puzzleMatchCount = 0;
+    let puzzleLastSuccessfulMatch = 0;
+    let puzzleBusy = false;
+    let puzzleGameEnded = false;
+    let puzzleTimerInterval = null;
+
+    function randomPuzzleBlock() {
+        const commonBlockCount = 6;
+        const totalWeight =
+            commonBlockCount * PUZZLE_COMMON_BLOCK_WEIGHT +
+            (PUZZLE_BLOCK_ASSETS.length - commonBlockCount);
+        let choice = Math.random() * totalWeight;
+
+        for (let index = 0; index < PUZZLE_BLOCK_ASSETS.length; index++) {
+            choice -= index < commonBlockCount
+                ? PUZZLE_COMMON_BLOCK_WEIGHT
+                : 1;
+
+            if (choice < 0) {
+                return index;
+            }
+        }
+
+        return 0;
+    }
+
+    function wouldCreatePuzzleMatch(index, value) {
+        const x = index % PUZZLE_COLS;
+        const y = Math.floor(index / PUZZLE_COLS);
+
+        if (x >= 2 && puzzleTiles[index - 1] === value && puzzleTiles[index - 2] === value) {
+            return true;
+        }
+
+        if (y >= 2 && puzzleTiles[index - PUZZLE_COLS] === value && puzzleTiles[index - PUZZLE_COLS * 2] === value) {
+            return true;
+        }
+
+        return false;
+    }
+
+    function createPuzzleBoard() {
+        for (let boardAttempt = 0; boardAttempt < 120; boardAttempt++) {
+            puzzleTiles = new Array(PUZZLE_TOTAL_TILES);
+
+            for (let i = 0; i < PUZZLE_TOTAL_TILES; i++) {
+                let value;
+                let attempts = 0;
+
+                do {
+                    value = randomPuzzleBlock();
+                    attempts++;
+                } while (wouldCreatePuzzleMatch(i, value) && attempts < 40);
+
+                puzzleTiles[i] = value;
+            }
+
+            if (countPuzzleMoves(PUZZLE_MIN_AVAILABLE_MOVES) >= PUZZLE_MIN_AVAILABLE_MOVES) {
+                return;
+            }
+        }
+    }
+
+    function isPuzzleAdjacent(first, second) {
+        const x1 = first % PUZZLE_COLS;
+        const y1 = Math.floor(first / PUZZLE_COLS);
+        const x2 = second % PUZZLE_COLS;
+        const y2 = Math.floor(second / PUZZLE_COLS);
+
+        return Math.abs(x1 - x2) + Math.abs(y1 - y2) === 1;
+    }
+
+    function findPuzzleMatches() {
+        const matches = new Set();
+
+        for (let row = 0; row < PUZZLE_ROWS; row++) {
+            let column = 0;
+
+            while (column < PUZZLE_COLS) {
+                const index = row * PUZZLE_COLS + column;
+                const value = puzzleTiles[index];
+
+                if (value === null || value === undefined) {
+                    column++;
+                    continue;
+                }
+
+                let end = column + 1;
+
+                while (end < PUZZLE_COLS && puzzleTiles[row * PUZZLE_COLS + end] === value) {
+                    end++;
+                }
+
+                const length = end - column;
+
+                if (length >= 3) {
+                    for (let c = column; c < end; c++) {
+                        matches.add(row * PUZZLE_COLS + c);
+                    }
+                }
+
+                column = end;
+            }
+        }
+
+        for (let column = 0; column < PUZZLE_COLS; column++) {
+            let row = 0;
+
+            while (row < PUZZLE_ROWS) {
+                const index = row * PUZZLE_COLS + column;
+                const value = puzzleTiles[index];
+
+                if (value === null || value === undefined) {
+                    row++;
+                    continue;
+                }
+
+                let end = row + 1;
+
+                while (end < PUZZLE_ROWS && puzzleTiles[end * PUZZLE_COLS + column] === value) {
+                    end++;
+                }
+
+                const length = end - row;
+
+                if (length >= 3) {
+                    for (let r = row; r < end; r++) {
+                        matches.add(r * PUZZLE_COLS + column);
+                    }
+                }
+
+                row = end;
+            }
+        }
+
+        return [...matches];
+    }
+
+    function countPuzzleMoves(limit = Number.POSITIVE_INFINITY) {
+        let availableMoves = 0;
+
+        for (let index = 0; index < PUZZLE_TOTAL_TILES; index++) {
+            const neighbors = [];
+
+            if (index % PUZZLE_COLS < PUZZLE_COLS - 1) {
+                neighbors.push(index + 1);
+            }
+
+            if (index < PUZZLE_TOTAL_TILES - PUZZLE_COLS) {
+                neighbors.push(index + PUZZLE_COLS);
+            }
+
+            for (const neighbor of neighbors) {
+                swapPuzzleTiles(index, neighbor);
+                const createsMatch = findPuzzleMatches().length > 0;
+                swapPuzzleTiles(index, neighbor);
+
+                if (createsMatch && ++availableMoves >= limit) {
+                    return availableMoves;
+                }
+            }
+        }
+
+        return availableMoves;
+    }
+
+    function renderPuzzleBoard(fallingIndexes = new Set()) {
+        puzzleBoard.replaceChildren();
+
+        for (let i = 0; i < PUZZLE_TOTAL_TILES; i++) {
+            const tile = document.createElement("button");
+            tile.type = "button";
+            tile.className = "puzzle-tile";
+            tile.dataset.index = String(i);
+
+            if (i === puzzleSelectedTile) {
+                tile.classList.add("selected");
+            }
+
+            if (fallingIndexes.has(i)) {
+                tile.classList.add("puzzle-falling");
+            }
+
+            const image = document.createElement("img");
+            image.src = PUZZLE_BLOCK_ASSETS[puzzleTiles[i]];
+            image.alt = "EpiCoin puzzle block";
+            image.draggable = false;
+
+            tile.appendChild(image);
+            tile.addEventListener("click", () => selectPuzzleTile(i));
+            puzzleBoard.appendChild(tile);
+        }
+    }
+
+    function selectPuzzleTile(index) {
+        if (puzzleGameEnded || puzzleBusy) {
+            return;
+        }
+
+        if (puzzleSelectedTile === -1) {
+            puzzleSelectedTile = index;
+            renderPuzzleBoard();
+            return;
+        }
+
+        if (puzzleSelectedTile === index) {
+            puzzleSelectedTile = -1;
+            renderPuzzleBoard();
+            return;
+        }
+
+        if (!isPuzzleAdjacent(puzzleSelectedTile, index)) {
+            puzzleSelectedTile = index;
+            renderPuzzleBoard();
+            return;
+        }
+
+        const first = puzzleSelectedTile;
+        const second = index;
+
+        puzzleSelectedTile = -1;
+        puzzleBusy = true;
+
+        swapPuzzleTiles(first, second);
+        renderPuzzleBoard();
+
+        setTimeout(() => {
+            resolvePuzzleSwap(first, second);
+        }, 100);
+    }
+
+    function swapPuzzleTiles(first, second) {
+        const temp = puzzleTiles[first];
+        puzzleTiles[first] = puzzleTiles[second];
+        puzzleTiles[second] = temp;
+    }
+
+    function resolvePuzzleSwap(first, second) {
+        if (puzzleGameEnded) {
+            return;
+        }
+
+        const matches = findPuzzleMatches();
+
+        if (matches.length === 0) {
+            swapPuzzleTiles(first, second);
+            renderPuzzleBoard();
+            puzzleMessage.textContent = "No match — try another swap.";
+            puzzleBusy = false;
+            return;
+        }
+
+        clearPuzzleMatches(matches);
+    }
+
+    function clearPuzzleMatches(matches) {
+        if (puzzleGameEnded) {
+            return;
+        }
+
+        const now = performance.now();
+
+        if (puzzleLastSuccessfulMatch && now - puzzleLastSuccessfulMatch <= PUZZLE_COMBO_RESET_TIME) {
+            puzzleCombo++;
+        } else {
+            puzzleCombo = 1;
+        }
+
+        puzzleLastSuccessfulMatch = now;
+
+        if (puzzleCombo > puzzleBestCombo) {
+            puzzleBestCombo = puzzleCombo;
+        }
+
+        puzzleMatchCount++;
+
+        const basePoints = 100;
+        let points = basePoints;
+
+        if (matches.length === 4) {
+            points = 150;
+        }
+
+        if (matches.length >= 5) {
+            points = 250;
+        }
+
+        const comboMultiplier = Math.min(puzzleCombo, 5);
+        const earnedPoints = Math.round(points * comboMultiplier);
+
+        puzzleScore += earnedPoints;
+        puzzleSeconds = Math.min(PUZZLE_GAME_TIME, puzzleSeconds + 1);
+
+        updatePuzzleHUD();
+        puzzleMessage.textContent = `+${earnedPoints} points • +1 second`;
+        showPuzzleFloatingScore(earnedPoints);
+
+        matches.forEach((index) => {
+            const tile = puzzleBoard.children[index];
+
+            if (tile) {
+                tile.classList.add("puzzle-matching");
+            }
+        });
+
+        setTimeout(() => {
+            if (puzzleGameEnded) {
+                return;
+            }
+
+            matches.forEach((index) => {
+                puzzleTiles[index] = null;
+            });
+
+            const previousTiles = [...puzzleTiles];
+            collapsePuzzleBoard();
+            const chain = findPuzzleMatches();
+            const fallingIndexes = new Set();
+
+            puzzleTiles.forEach((tile, index) => {
+                if (tile !== previousTiles[index]) {
+                    fallingIndexes.add(index);
+                }
+            });
+
+            if (chain.length === 0 && countPuzzleMoves(PUZZLE_MIN_AVAILABLE_MOVES) < PUZZLE_MIN_AVAILABLE_MOVES) {
+                createPuzzleBoard();
+                puzzleTiles.forEach((tile, index) => fallingIndexes.add(index));
+            }
+
+            renderPuzzleBoard(fallingIndexes);
+
+            if (chain.length > 0) {
+                setTimeout(() => {
+                    clearPuzzleMatches(chain);
+                }, 100);
+            } else {
+                puzzleBusy = false;
+
+                if (puzzleScore >= PUZZLE_JACKPOT_TARGET) {
+                    endPuzzleGame();
+                }
+            }
+        }, 260);
+    }
+
+    function collapsePuzzleBoard() {
+        for (let column = 0; column < PUZZLE_COLS; column++) {
+            let writeRow = PUZZLE_ROWS - 1;
+
+            for (let row = PUZZLE_ROWS - 1; row >= 0; row--) {
+                const index = row * PUZZLE_COLS + column;
+
+                if (puzzleTiles[index] !== null && puzzleTiles[index] !== undefined) {
+                    puzzleTiles[writeRow * PUZZLE_COLS + column] = puzzleTiles[index];
+
+                    if (writeRow !== row) {
+                        puzzleTiles[index] = null;
+                    }
+
+                    writeRow--;
+                }
+            }
+
+            for (let row = writeRow; row >= 0; row--) {
+                puzzleTiles[row * PUZZLE_COLS + column] = randomPuzzleBlock();
+            }
+        }
+    }
+
+    function showPuzzleFloatingScore(amount) {
+        const score = document.createElement("div");
+        score.className = "puzzle-floating-score";
+        score.textContent = `+${amount}`;
+
+        const x = 35 + Math.random() * 30;
+        const y = 45 + Math.random() * 15;
+
+        score.style.left = `${x}%`;
+        score.style.top = `${y}%`;
+
+        puzzleFloatingLayer.appendChild(score);
+
+        setTimeout(() => {
+            score.remove();
+        }, 850);
+    }
+
+    function updatePuzzleHUD() {
+        puzzleScoreElement.textContent = puzzleScore.toLocaleString();
+        puzzleTargetScore.textContent = Math.min(puzzleScore, PUZZLE_JACKPOT_TARGET).toLocaleString();
+
+        const targetPercent = Math.min(100, (puzzleScore / PUZZLE_JACKPOT_TARGET) * 100);
+        puzzleTargetFill.style.width = `${targetPercent}%`;
+
+        puzzleComboElement.textContent = `x${puzzleCombo}`;
+        puzzleMatchesElement.textContent = puzzleMatchCount;
+        puzzleLiveReward.textContent = puzzleScore.toLocaleString();
+
+        const minutes = Math.floor(puzzleSeconds / 60);
+        const remainingSeconds = puzzleSeconds % 60;
+
+        puzzleTimerElement.textContent = `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
+        puzzleTimerFill.style.width = `${(puzzleSeconds / PUZZLE_GAME_TIME) * 100}%`;
+    }
+
+    function startPuzzleTimer() {
+        clearInterval(puzzleTimerInterval);
+
+        puzzleTimerInterval = setInterval(() => {
+            if (puzzleGameEnded) {
+                return;
+            }
+
+            puzzleSeconds--;
+
+            if (puzzleCombo > 1 && puzzleLastSuccessfulMatch && performance.now() - puzzleLastSuccessfulMatch >= PUZZLE_COMBO_RESET_TIME) {
+                puzzleCombo = 1;
+                puzzleMessage.textContent = "Combo reset — keep matching!";
+            }
+
+            updatePuzzleHUD();
+
+            if (puzzleSeconds <= 0) {
+                endPuzzleGame();
+            }
+        }, 1000);
+    }
+
+    function endPuzzleGame() {
+        if (puzzleGameEnded) {
+            return;
+        }
+
+        puzzleGameEnded = true;
+        puzzleBusy = true;
+        clearInterval(puzzleTimerInterval);
+
+        const reachedJackpot = puzzleScore >= PUZZLE_JACKPOT_TARGET;
+        const reward = reachedJackpot ? PUZZLE_JACKPOT_REWARD : puzzleScore;
+
+        creditPotBalance(reward);
+
+        puzzleFinalScore.textContent = puzzleScore.toLocaleString();
+        puzzleFinalMatches.textContent = puzzleMatchCount;
+        puzzleFinalCombo.textContent = `x${puzzleBestCombo}`;
+        puzzleFinalReward.textContent = reward.toLocaleString();
+
+        if (reachedJackpot) {
+            puzzleResultTitle.textContent = "JACKPOT!";
+            puzzleResultMessage.textContent = "You reached 2,000 points!";
+            puzzleJackpotStatus.textContent = "10K $POT";
+            puzzleRewardNote.textContent = "🎉 JACKPOT REWARD: 10,000 $POT";
+        } else {
+            puzzleResultTitle.textContent = "TIME'S UP!";
+            puzzleResultMessage.textContent = "Your final score has been converted into your reward.";
+            puzzleJackpotStatus.textContent = "LOCKED";
+            puzzleRewardNote.textContent = `${puzzleScore.toLocaleString()} $POT reward earned`;
+        }
+
+        puzzleGameOver.classList.remove("hidden");
+    }
+
+    function startPuzzleGame() {
+        clearInterval(puzzleTimerInterval);
+
+        puzzleSelectedTile = -1;
+        puzzleScore = 0;
+        puzzleSeconds = PUZZLE_GAME_TIME;
+        puzzleCombo = 1;
+        puzzleBestCombo = 1;
+        puzzleMatchCount = 0;
+        puzzleLastSuccessfulMatch = 0;
+        puzzleBusy = false;
+        puzzleGameEnded = false;
+
+        puzzleGameOver.classList.add("hidden");
+        puzzleMessage.textContent = "Connect 3 matching blocks together.";
+
+        createPuzzleBoard();
+        updatePuzzleHUD();
+        renderPuzzleBoard();
+        startPuzzleTimer();
+    }
+
+    document.getElementById("puzzleGameButton").addEventListener("click", () => {
+        showScreen(puzzleGameScreen);
+        currentScreen = "puzzle";
+        startPuzzleGame();
+    });
+
+    document.getElementById("puzzleBack").addEventListener("click", () => {
+        clearInterval(puzzleTimerInterval);
+        puzzleTimerInterval = null;
+        showScreen(homeScreen);
+        currentScreen = "home";
+    });
+
+    puzzlePlayAgain.addEventListener("click", startPuzzleGame);
+
+})();
 
 /* =========================================================
    CSS ANIMATION ADDED FROM JS

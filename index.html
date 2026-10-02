@@ -25,27 +25,21 @@
         </header>
 
         <section class="spin-content">
-            <div class="eyebrow"><span></span> GENESIS PLAYER DROP <span></span></div>
-            <h1>Crypto <em>Lucky Spin</em></h1>
-            <p class="onboarding-copy">One spin to kick off your EpiCoin journey.</p>
+            <div class="eyebrow"><span></span> DAILY CASH DROP <span></span></div>
+            <h1>SPIN <em>THE WHEEL</em></h1>
+            <p class="onboarding-copy">Small prizes win often. The biggest prizes are hidden in the narrowest slices.</p>
 
             <div class="wheel-stage">
-                <div class="wheel-callout wheel-callout-top">500K $POT</div>
-                <div class="wheel-callout wheel-callout-left">EpiCoin</div>
-                <div class="wheel-callout wheel-callout-right">500K $POT</div>
                 <div class="wheel-pointer" aria-hidden="true"></div>
                 <div class="wheel-aura" aria-hidden="true"></div>
                 <div class="wheel-rail" aria-hidden="true"></div>
-                <div id="luckyWheel" class="lucky-wheel" role="img" aria-label="Lucky wheel with eight rewards">
-                    <div class="wheel-label wheel-label-1"><b>10K</b><small>$POT</small></div>
-                    <div class="wheel-label wheel-label-2"><b>50K</b><small>$POT</small></div>
-                    <div class="wheel-label wheel-label-3"><b>MINI</b><small>JACKPOT</small></div>
-                    <div class="wheel-label wheel-label-4"><b>MAJOR</b><small>JACKPOT</small></div>
-                    <div class="wheel-label wheel-label-5"><b>GRAND</b><small>JACKPOT</small></div>
-                    <div class="wheel-label wheel-label-6"><b>EpiCoin</b><small>BOOST</small></div>
-                    <div class="wheel-label wheel-label-7"><b>1,000</b><small>$POT</small></div>
-                    <div class="wheel-label wheel-label-8"><b>500</b><small>$POT</small></div>
-                    <div class="wheel-hub"><img src="logo.png" alt=""></div>
+                <div id="luckyWheel" class="lucky-wheel" role="img" aria-label="Lucky wheel with weighted rewards">
+                    <div class="wheel-hub">
+                        <span>WIN</span>
+                        <small>UP TO</small>
+                        <strong>500K</strong>
+                        <small>$POT</small>
+                    </div>
                 </div>
                 <div class="wheel-spark spark-one" aria-hidden="true">✦</div>
                 <div class="wheel-spark spark-two" aria-hidden="true">✧</div>
@@ -227,17 +221,17 @@
             </article>
 
 
-            <!-- TAP TO EARN -->
+            <!-- EPICOIN PUZZLE -->
 
-            <article class="game-card tap-card">
+            <article class="game-card puzzle-card">
 
-                <div class="game-art tap-art">
+                <div class="game-art puzzle-art">
 
-                    <div class="tap-art-circle">
+                    <div class="puzzle-art-badge">
 
                         <img
-                            src="epicoin2.png"
-                            alt="EpiCoin"
+                            src="game2logo.png"
+                            alt="EpiCoin Puzzle"
                         >
 
                     </div>
@@ -252,14 +246,14 @@
 
                     <div class="game-number">02</div>
 
-                    <h3>Tap To Earn</h3>
+                    <h3>EpiCoin Puzzle</h3>
 
                     <p>
-                        Tap, earn, upgrade and compete for the highest score.
+                        Match 3+ blocks, build combos and chase the 2,000-point jackpot.
                     </p>
 
-                    <button class="play-button coming-button">
-                        COMING SOON
+                    <button class="play-button" id="puzzleGameButton">
+                        PLAY PUZZLE
                         <span>→</span>
                     </button>
 
@@ -527,6 +521,160 @@
 
     </main>
 
+
+
+    <!-- =========================
+         EPICOIN PUZZLE GAME
+    ========================== -->
+
+    <main id="puzzleGameScreen" class="screen">
+
+        <header class="game-header gameplay-header">
+
+            <button class="back-button" id="puzzleBack">
+                ← Games
+            </button>
+
+            <img
+                src="ingame2logo.png"
+                class="small-game-logo gameplay-logo"
+                alt="EpiCoin Puzzle"
+            >
+
+            <button class="header-button">
+                <span>Puzzle</span>
+            </button>
+
+        </header>
+
+        <div class="puzzle-game-wrapper">
+
+            <header class="puzzle-topbar">
+
+                <div class="puzzle-top-stat">
+                    <span>SCORE</span>
+                    <strong id="puzzleScore">0</strong>
+                </div>
+
+                <div class="puzzle-top-stat puzzle-timer-box">
+                    <span>TIME</span>
+                    <strong id="puzzleTimer">3:00</strong>
+                </div>
+
+            </header>
+
+            <div class="puzzle-target-area">
+
+                <div class="puzzle-target-text">
+                    <span>JACKPOT TARGET</span>
+
+                    <strong>
+                        <span id="puzzleTargetScore">0</span>
+                        <small>/ 2,000</small>
+                    </strong>
+                </div>
+
+                <div class="puzzle-target-bar">
+                    <div id="puzzleTargetFill"></div>
+                </div>
+
+                <div class="puzzle-target-reward">
+                    🪙 <b>10,000 $POT</b>
+                </div>
+
+            </div>
+
+            <div class="puzzle-timer-track">
+                <div id="puzzleTimerFill"></div>
+            </div>
+
+            <section class="puzzle-board-container">
+
+                <div id="puzzleBoard" class="puzzle-board"></div>
+
+                <div id="puzzleFloatingLayer" class="puzzle-floating-layer"></div>
+
+            </section>
+
+            <div class="puzzle-bottom-stats">
+
+                <div class="puzzle-bottom-stat">
+                    <span>COMBO</span>
+                    <strong id="puzzleCombo">x1</strong>
+                </div>
+
+                <div class="puzzle-bottom-stat">
+                    <span>MATCHES</span>
+                    <strong id="puzzleMatches">0</strong>
+                </div>
+
+                <div class="puzzle-bottom-stat">
+                    <span>REWARD</span>
+                    <strong id="puzzleLiveReward">0</strong>
+                </div>
+
+            </div>
+
+            <p id="puzzleMessage" class="puzzle-message">
+                Connect 3 matching blocks together.
+            </p>
+
+        </div>
+
+    </main>
+
+    <div id="puzzleGameOver" class="puzzle-overlay hidden">
+
+        <div class="puzzle-over-card">
+
+            <div class="puzzle-result-logo">
+                <img src="ingame2logo.png" alt="EpiCoin">
+            </div>
+
+            <p class="puzzle-result-label">PUZZLE COMPLETE</p>
+
+            <h1 id="puzzleResultTitle">TIME'S UP!</h1>
+
+            <p id="puzzleResultMessage">Your final reward has been calculated.</p>
+
+            <div class="puzzle-result-score">
+
+                <span>FINAL SCORE</span>
+                <strong id="puzzleFinalScore">0</strong>
+
+            </div>
+
+            <div class="puzzle-result-grid">
+
+                <div>
+                    <span>MATCHES</span>
+                    <b id="puzzleFinalMatches">0</b>
+                </div>
+
+                <div>
+                    <span>BEST COMBO</span>
+                    <b id="puzzleFinalCombo">x1</b>
+                </div>
+
+                <div>
+                    <span>$POT REWARD</span>
+                    <b id="puzzleFinalReward">0</b>
+                </div>
+
+                <div>
+                    <span>JACKPOT</span>
+                    <b id="puzzleJackpotStatus">LOCKED</b>
+                </div>
+
+            </div>
+
+            <div class="puzzle-reward-note" id="puzzleRewardNote"></div>
+
+            <button id="puzzlePlayAgain">PLAY AGAIN</button>
+
+        </div>
+
+    </div>
 
 
     <!-- =========================
